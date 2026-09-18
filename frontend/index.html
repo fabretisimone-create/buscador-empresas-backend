@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscador de Empresas</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+    .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .field { margin-bottom: 12px; }
+    label { display: block; margin-bottom: 4px; font-weight: bold; }
+    input, select, button { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { background-color: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; margin-top: 10px; }
+    button:hover { background-color: #0056b3; }
+    .card { background: #fff; border: 1px solid #ddd; padding: 12px; margin-top: 10px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Buscador de Empresas sem Site</h2>
+    
+    <div class="field">
+      <label for="estadoSelect">Estado (UF):</label>
+      <input type="text" id="estadoSelect" placeholder="Ex: SP">
+    </div>
+
+    <div class="field">
+      <label for="cidadeSelect">Cidade:</label>
+      <input type="text" id="cidadeSelect" placeholder="Ex: São Paulo">
+    </div>
+
+    <div class="field">
+      <label for="categoriaInput">Categoria:</label>
+      <input type="text" id="categoriaInput" placeholder="Ex: Restaurante, Padaria">
+    </div>
+
+    <div class="field">
+      <label for="termoInput">Termo de Busca:</label>
+      <input type="text" id="termoInput" placeholder="Ex: Pizzaria centro">
+    </div>
+
+    <button onclick="buscarEmpresas()">Pesquisar</button>
+
+    <div id="resultados"></div>
+  </div>
+
+  <script>
+    async function buscarEmpresas() {
+      const estado = document.getElementById('estadoSelect').value;
+      const cidade = document.getElementById('cidadeSelect').value;
+      const categoria = document.getElementById('categoriaInput').value;
+      const termo = document.getElementById('termoInput').value;
+      const containerResultados = document.getElementById('resultados');
+
+      const BACKEND_URL = 'https://buscador-empresas-backend.onrender.com/api/buscar-empresas';
+
+      containerResultados.innerHTML = '<p>Buscando empresas...</p>';
+
+      try {
+        const response = await fetch(BACKEND_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estado, cidade, categoria, termo })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao buscar empresas');
+        }
+
+        if (data.empresasSemSite.length === 0) {
+          containerResultados.innerHTML = '<p>Nenhuma empresa sem site encontrada para este filtro.</p>';
+          return;
+        }
+
+        containerResultados.innerHTML = `<h3>Encontradas: ${data.empresasSemSite.length}</h3>`;
+        
+        data.empresasSemSite.forEach(empresa => {
+          containerResultados.innerHTML += `
+            <div class="card">
+              <h4>${empresa.nome}</h4>
+              <p><strong>Categoria:</strong> ${empresa.categoria}</p>
+              <p><strong>Endereço:</strong> ${empresa.endereco}</p>
+              <p><strong>Telefone:</strong> ${empresa.telefone}</p>
+              <p><strong>Avaliações:</strong> ${empresa.avaliacoes}</p>
+              <a href="${empresa.mapsUrl}" target="_blank">Ver no Google Maps</a>
+            </div>
+          `;
+        });
+
+      } catch (error) {
+        containerResultados.innerHTML = `<p style="color:red;">Erro: ${error.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
